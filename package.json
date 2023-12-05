@@ -1,0 +1,16 @@
+{
+    "name": "generarfactura",
+    "version": "1.0.0",
+    "description": "Función de Google Cloud para crear una Factura",
+    "main": "function.js",
+    "dependencies": {
+      "axios": "^0.27.2",
+      "@google-cloud/functions-framework": "^3.0.0"
+    },
+    "engines": {
+      "node": "14.x"
+    },
+    "scripts": {
+      "start": "node function.js"
+    }
+}
