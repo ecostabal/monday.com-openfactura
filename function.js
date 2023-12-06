@@ -35,8 +35,8 @@ exports.generarFactura = async (req, res) => {
             query: query
         }, {
             headers: {
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjIzMjg7MzUyNCwiYWFpIjoxMSwidWlkIjoyMzUzNzM2NCwiaWFkIjoiMjAyMy0wMS0zMVQyMTowMjoxNy4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTUwNzUxNiwicmduIjoidXNlMSJ9.lX1RYu90B2JcH0QxITaF8ymd4d6dBes0FJHPI1mzSRE',
-                'Content-Type': 'application/json'
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjIzMjg3MzUyNCwiYWFpIjoxMSwidWlkIjoyMzUzNzM2NCwiaWFkIjoiMjAyMy0wMS0zMVQyMTowMjoxNy4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTUwNzUxNiwicmduIjoidXNlMSJ9.lX1RYu90B2JcH0QxITaF8ymd4d6dBes0FJHPI1mzSRE',
+              'Content-Type': 'application/json'
             }
         });
 
@@ -93,26 +93,30 @@ exports.generarFactura = async (req, res) => {
                     Emisor: emisor,
                     Receptor: receptor,
                     Totales: {
-                        MntNeto: 2000,
-                        TasaIVA: "19",
-                        IVA: 380,
-                        MntTotal: 2380,
-                        MontoPeriodo: 2380,
-                        VlrPagar: 2380,
+                        MntTotal: montoTotal,
                     }
                 },
-                Detalle: {
+                Detalle: [
+                  {
                     NroLinDet: 1,
-                    NmbItem: "item",
+                    NmbItem: "Comisión de Arriendo",
                     QtyItem: 1,
-                    PrcItem: 2000,
-                    MontoItem: 2000,
-                },
+                    PrcItem: parseFloat(comisionArriendo),
+                    MontoItem: comisionArriendo                   
+                  },
+                  {
+                    NroLinDet: 2, // Cambié el número de línea del segundo ítem a 2
+                    NmbItem: "Gasto Notarial 2", // Cambié el nombre del ítem para distinguirlos
+                    QtyItem: 1,
+                    PrcItem: parseFloat(gastoNotarial),
+                    MontoItem: gastoNotarial                
+                  }
+                ],
                 DscRcgGlobal: {
                   NroLinDR: 1, // Puedes ajustar este valor
-                  TpoMov: "", // Puedes ajustar este valor
-                  TpoValor: "", // Puedes ajustar este valor
-                  ValorDR: 0, // Puedes ajustar este valor
+                  TpoMov: "D", // Puedes ajustar este valor
+                  TpoValor: "%", // Puedes ajustar este valor
+                  ValorDR: 2, // Puedes ajustar este valor
                 },
             },
         };
@@ -148,7 +152,7 @@ exports.generarFactura = async (req, res) => {
                     }
                 `,
                 headers: {
-                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjIzMjg7MzUyNCwiYWFpIjoxMSwidWlkIjoyMzUzNzM2NCwiaWFkIjoiMjAyMy0wMS0zMVQyMTowMjoxNy4wMDBaIiwicGVyIjoibw6fDoXJpdGUiLCJhY3RpZCI6OTUwNzUxNiwicmduIjoidXNlMSJ9.lX1RYu90B2JcH0QxITaF8ymd4d6dBes0FJHPI1mzSRE'
+                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjIzMjg3MzUyNCwiYWFpIjoxMSwidWlkIjoyMzUzNzM2NCwiaWFkIjoiMjAyMy0wMS0zMVQyMTowMjoxNy4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTUwNzUxNiwicmduIjoidXNlMSJ9.lX1RYu90B2JcH0QxITaF8ymd4d6dBes0FJHPI1mzSRE'
                 }
             });
 
