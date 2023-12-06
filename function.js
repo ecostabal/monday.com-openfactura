@@ -54,10 +54,12 @@ exports.generarFactura = async (req, res) => {
         const valorArriendo = parseFloat(valorArriendoColumn.text);
         const comisionRate = parseFloat(comisionRateColumn.text) / 100;
         const gastoNotarial = parseFloat(gastoNotarialColumn.text);
+
+        // Calculos
         const comisionArriendo = valorArriendo * comisionRate;
         const subtotal = comisionArriendo + gastoNotarial;
         const iva = subtotal * 0.19; // Ajustar según corresponda
-        const montoTotal = subtotal + iva;
+        const totalFactura = subtotal + iva
 
         // Generar una Idempotency Key única
         const idempotencyKey = generateIdempotencyKey();
@@ -93,31 +95,36 @@ exports.generarFactura = async (req, res) => {
                     Emisor: emisor,
                     Receptor: receptor,
                     Totales: {
-                        MntTotal: montoTotal,
+                        MntNeto: subtotal,
+                        TasaIVA: "19",
+                        IVA: iva,
+                        MntTotal: totalFactura,
                     }
                 },
                 Detalle: [
                   {
                     NroLinDet: 1,
-                    NmbItem: "Comisión de Arriendo",
+                    NmbItem: "Comision de Arriendo",
                     QtyItem: 1,
                     PrcItem: parseFloat(comisionArriendo),
                     MontoItem: comisionArriendo                   
                   },
                   {
-                    NroLinDet: 2, // Cambié el número de línea del segundo ítem a 2
-                    NmbItem: "Gasto Notarial 2", // Cambié el nombre del ítem para distinguirlos
+                    NroLinDet: 2,
+                    NmbItem: "Gasto Notarial",
                     QtyItem: 1,
                     PrcItem: parseFloat(gastoNotarial),
                     MontoItem: gastoNotarial                
                   }
                 ],
+                /*
                 DscRcgGlobal: {
                   NroLinDR: 1, // Puedes ajustar este valor
                   TpoMov: "D", // Puedes ajustar este valor
                   TpoValor: "%", // Puedes ajustar este valor
-                  ValorDR: 2, // Puedes ajustar este valor
+                  ValorDR: 0, // Puedes ajustar este valor
                 },
+                */
             },
         };
 
@@ -145,15 +152,15 @@ exports.generarFactura = async (req, res) => {
             const updateResponse = await axios.post('https://api.monday.com/v2', {
                 query: `
                     mutation {
-                        change_column_value (board_id: ${itemId}, item_id: ${itemId}, column_id: "archivo9", value: "${facturaResponse.data.PDF}") {
+                        change_column_value (board_id: 5598495616, item_id: ${itemId}, column_id: "archivo9", value: "${facturaResponse.data.PDF}") {
                             id
                         }
                         // Otros cambios de columna según sea necesario
                     }
                 `,
                 headers: {
-                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjIzMjg3MzUyNCwiYWFpIjoxMSwidWlkIjoyMzUzNzM2NCwiaWFkIjoiMjAyMy0wMS0zMVQyMTowMjoxNy4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTUwNzUxNiwicmduIjoidXNlMSJ9.lX1RYu90B2JcH0QxITaF8ymd4d6dBes0FJHPI1mzSRE'
-                }
+                  'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjIzMjg3MzUyNCwiYWFpIjoxMSwidWlkIjoyMzUzNzM2NCwiaWFkIjoiMjAyMy0wMS0zMVQyMTowMjoxNy4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTUwNzUxNiwicmduIjoidXNlMSJ9.lX1RYu90B2JcH0QxITaF8ymd4d6dBes0FJHPI1mzSRE',
+                  'Content-Type': 'application/json'                }
             });
 
             console.log("Respuesta de la actualización en Monday.com:", updateResponse.data);
