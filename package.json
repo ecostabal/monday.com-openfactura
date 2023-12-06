@@ -1,16 +1,13 @@
 {
-    "name": "generarfactura",
-    "version": "1.0.0",
-    "description": "Función de Google Cloud para crear una Factura",
-    "main": "function.js",
-    "dependencies": {
-      "axios": "^0.27.2",
-      "@google-cloud/functions-framework": "^3.0.0"
-    },
-    "engines": {
-      "node": "14.x"
-    },
-    "scripts": {
-      "start": "node function.js"
-    }
+  "name": "monday-webhook-function",
+  "version": "1.0.0",
+  "description": "Función de Google Cloud para manejar webhook de Monday y crear factura en Openfactura",
+  "main": "function.js",
+  "scripts": {
+    "start": "node function.js"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "uuid": "^X.X.X"
+  }
 }
