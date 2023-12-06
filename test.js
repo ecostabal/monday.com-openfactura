@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { Storage } = require('@google-cloud/storage');
+const fetch = require('node-fetch');
 
 // Inicializa el cliente de Google Cloud Storage
 const storage = new Storage();
@@ -172,50 +173,47 @@ exports.generarFactura = async (req, res) => {
 
         // Después de subir el archivo a GCS, procede a actualizar las columnas en Monday.com
         try {
-          const updateResponse1 = await axios.post(
-            'https://api.monday.com/v2',
-            {
-              query: `
+            // Define los valores que deseas actualizar
+            const columnValues = {
+                "enlace9": `${publicUrl} Ver Factura`,
+                "n_meros8": `${folio}`
+            };
+            
+            // Convierte el objeto a una cadena JSON
+            const columnValuesJSON = JSON.stringify(columnValues);
+            
+            // Construye la cadena de mutación GraphQL
+            const mutation = `
                 mutation {
-                  change_simple_column_value (item_id: ${itemId}, board_id: 5598495616, column_id:"texto46", value: "${folio}") {
+                change_multiple_column_values (
+                    item_id: ${itemId},
+                    board_id: 5598495616,
+                    column_values: "${columnValuesJSON}"
+                ) {
                     id
-                  }
                 }
-              `,
-            },
-            {
-              headers: {
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjIzMjg3MzUyNCwiYWFpIjoxMSwidWlkIjoyMzUzNzM2NCwiaWFkIjoiMjAyMy0wMS0zMVQyMTowMjoxNy4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTUwNzUxNiwicmduIjoidXNlMSJ9.lX1RYu90B2JcH0QxITaF8ymd4d6dBes0FJHPI1mzSRE', // Reemplaza con tu API key de Monday.com
-                'Content-Type': 'application/json'
-              },
-            }
-          );
-
-          const updateResponse2 = await axios.post(
-            'https://api.monday.com/v2',
-            {
-              query: `
-                mutation {
-                  change_simple_column_value (item_id: ${itemId}, board_id: 5598495616, column_id:"enlace9", value: "${publicUrl} Ver Factura") {
-                    id
-                  }     
                 }
-              `,
-            },
-            {
-              headers: {
+            `;
+            
+            // Realiza la solicitud a la API de Monday.com
+            fetch("https://api.monday.com/v2", {
+                method: 'post',
+                headers: {
+                'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjIzMjg3MzUyNCwiYWFpIjoxMSwidWlkIjoyMzUzNzM2NCwiaWFkIjoiMjAyMy0wMS0zMVQyMTowMjoxNy4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTUwNzUxNiwicmduIjoidXNlMSJ9.lX1RYu90B2JcH0QxITaF8ymd4d6dBes0FJHPI1mzSRE', // Reemplaza con tu API key de Monday.com
-                'Content-Type': 'application/json'
-              },
-            }
-          );
-          
+            },
+                body: JSON.stringify({
+                'query': mutation
+                })
+            })
+            .then(res => res.json())
+            .then(res => console.log(JSON.stringify(res, null, 2)))
+            .catch(error => console.error('Error:', error));
+  
 
-          console.log("Respuesta de la actualización en Monday.com:", updateResponse1.data);
-          console.log("Respuesta de la actualización en Monday.com:", updateResponse2.data);
+          console.log("Respuesta de la actualización en Monday.com:", updateResponse.data);
 
-
-          if (updateResponse1.data && updateResponse2.data) {
+          if (updateResponse.data) {
             res.status(200).send("Factura creada y datos actualizados en Monday.com");
           } else {
             res.status(500).send("Error al actualizar Monday.com");
