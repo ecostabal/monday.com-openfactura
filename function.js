@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { Storage } = require('@google-cloud/storage');
+const FormData = require('form-data');
 
 // Inicializa el cliente de Google Cloud Storage
 const storage = new Storage();
@@ -60,7 +61,7 @@ exports.generarFactura = async (req, res) => {
     const comisionArriendo = valorArriendo * comisionRate;
     const subtotal = comisionArriendo + gastoNotarial;
     const iva = subtotal * 0.19; // Ajustar según corresponda
-    const totalFactura = subtotal + iva
+    const totalFactura = subtotal + iva;
 
     // Generar una Idempotency Key única
     const idempotencyKey = generateIdempotencyKey();
@@ -126,8 +127,8 @@ exports.generarFactura = async (req, res) => {
       method: 'post',
       url: 'https://dev-api.haulmer.com/v2/dte/document',
       headers: {
-        'apikey': '928e15a2d14d4a6292345f04960f4bd3',
-        'Idempotency-Key': idempotencyKey,
+        'apikey': '928e15a2d14d4a6292345f04960f4bd3', // Reemplaza con tu API key de Openfactura
+        'Idempotency-Key': generateIdempotencyKey(),
         'content-type': 'application/json'
       },
       data: facturaData
@@ -142,7 +143,7 @@ exports.generarFactura = async (req, res) => {
 
     if (facturaResponse.data && facturaResponse.data.PDF && facturaResponse.data.FOLIO) {
       // Subir el archivo PDF a Google Cloud Storage
-      const pdfFileName = 'archivo.pdf'; // Puedes cambiar el nombre del archivo aquí si lo deseas
+      const pdfFileName = `factura-${facturaResponse.data.FOLIO}.pdf`;
       const pdfBase64 = facturaResponse.data.PDF;
       const bucketName = 'facturas-urbex'; // Nombre de tu bucket de Google Cloud Storage
 
@@ -154,12 +155,12 @@ exports.generarFactura = async (req, res) => {
 
       const stream = file.createWriteStream({
         metadata: {
-          contentType: 'application/pdf', // Especifica el tipo de contenido del archivo
+          contentType: 'application/pdf',
         },
       });
 
       const folio = parseInt(facturaResponse.data.FOLIO);
-      console.log(folio)
+      console.log(folio);
 
       // Sube el archivo al bucket de GCS
       stream.end(buffer);
@@ -170,8 +171,40 @@ exports.generarFactura = async (req, res) => {
         // Obtener la URL pública del archivo cargado en Google Cloud Storage
         const publicUrl = `https://storage.googleapis.com/${bucketName}/${pdfFileName}`;
 
-        // Después de subir el archivo a GCS, procede a actualizar las columnas en Monday.com
+        // Subir el archivo a la columna de archivos en Monday.com
         try {
+          const form = new FormData();
+          form.append('operations', JSON.stringify({
+            query: `
+              mutation ($file: Upload!, $item_id: Int!, $column_id: String!) {
+                add_file_to_column(file: $file, item_id: $item_id, column_id: $column_id) {
+                  id
+                }
+              }
+            `,
+            variables: {
+              file: null,
+              item_id: itemId, // Reemplaza con el ID del elemento de Monday.com
+              column_id: 'archivo9' // Reemplaza con el ID de la columna de archivos
+            }
+          }));
+          form.append('map', JSON.stringify({ 0: ['variables.file'] }));
+          form.append(0, buffer, {
+            filename: pdfFileName,
+            contentType: 'application/pdf',
+          });
+
+          const formDataHeaders = {
+            ...form.getHeaders(),
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjIzMjg3MzUyNCwiYWFpIjoxMSwidWlkIjoyMzUzNzM2NCwiaWFkIjoiMjAyMy0wMS0zMVQyMTowMjoxNy4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTUwNzUxNiwicmduIjoidXNlMSJ9.lX1RYu90B2JcH0QxITaF8ymd4d6dBes0FJHPI1mzSRE', // Reemplaza con tu API key de Monday.com
+        };
+
+          const uploadResponse = await axios.post('https://api.monday.com/v2', form, {
+            headers: formDataHeaders,
+          });
+
+          console.log('Archivo subido a Monday.com:', uploadResponse.data);
+          
           const updateResponse1 = await axios.post(
             'https://api.monday.com/v2',
             {
@@ -209,11 +242,9 @@ exports.generarFactura = async (req, res) => {
               },
             }
           );
-          
 
           console.log("Respuesta de la actualización en Monday.com:", updateResponse1.data);
           console.log("Respuesta de la actualización en Monday.com:", updateResponse2.data);
-
 
           if (updateResponse1.data && updateResponse2.data) {
             res.status(200).send("Factura creada y datos actualizados en Monday.com");
@@ -230,22 +261,11 @@ exports.generarFactura = async (req, res) => {
         console.error('Error al subir el archivo a GCS:', err);
         res.status(500).send('Error al subir el archivo a GCS');
       });
-
-      // Resto del código para procesar y responder con los datos de la factura
     } else {
       throw new Error('La respuesta de Openfactura no contiene los campos esperados');
     }
   } catch (error) {
-    // Manejo de errores generales
-    if (error.response && error.response.data && error.response.data.error) {
-      const { message, code, details } = error.response.data.error;
-      console.error(`Error en Openfactura: ${message} (Código: ${code})`);
-      details.forEach(detail => {
-        console.error(`Campo: ${detail.field}, Problema: ${detail.issue}`);
-      });
-    } else {
-      console.error('Error general:', error.message);
-    }
+    console.error('Error general:', error.message);
     res.status(500).send('Error en la ejecución de la función');
   }
 };
