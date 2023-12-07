@@ -174,24 +174,14 @@ exports.generarFactura = async (req, res) => {
         // Subir el archivo a la columna de archivos en Monday.com
         try {
           const form = new FormData();
-          form.append('operations', JSON.stringify({
-            query: `
-              mutation ($file: Upload!, $item_id: Int!, $column_id: String!) {
-                add_file_to_column(file: $file, item_id: $item_id, column_id: $column_id) {
-                  id
-                }
-              }
-            `,
-            variables: {
-              file: null,
-              item_id: itemId, // Reemplaza con el ID del elemento de Monday.com
-              column_id: 'archivo9' // Reemplaza con el ID de la columna de archivos
+          form.append('query', `mutation add_file($file: File!) {
+            add_file_to_column (item_id: ${itemId}, column_id: "archivo9", file: $file) {
+              id
             }
-          }));
-          form.append('map', JSON.stringify({ 0: ['variables.file'] }));
-          form.append(0, buffer, {
+          }`);
+          form.append('variables[file]', buffer, {
             filename: pdfFileName,
-            contentType: 'application/pdf',
+            contentType: 'application/pdf', // Tipo de contenido correcto para un archivo PDF
           });
 
           const formDataHeaders = {
