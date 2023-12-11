@@ -50,6 +50,7 @@ exports.generarFactura = async (req, res) => {
     const comisionRateColumn = columnsData.find(column => column.id === 'n_meros0');
     const gastoNotarialColumn = columnsData.find(column => column.id === 'n_meros9');
     const descripcionColumn = columnsData.find(column => column.id === 'ubicaci_n');
+    const unidadColumn = columnsData.find(column => column.id === 'texto9');
     const rutReceptorColumn = columnsData.find(column => column.id === 'texto97');
 
     // Calcular montos y totales
@@ -106,7 +107,7 @@ exports.generarFactura = async (req, res) => {
         Detalle: [
           {
             NroLinDet: 1,
-            NmbItem: "Comision de Arriendo",
+            NmbItem: "Comision de Arriendo " + descripcionColumn.text + " , Nº Unidad: " + unidadColumn.text,
             QtyItem: 1,
             PrcItem: parseFloat(comisionArriendo),
             MontoItem: comisionArriendo                   
