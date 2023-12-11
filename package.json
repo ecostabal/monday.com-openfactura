@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^5.5.0",
+    "form-data": "^3.0.1",
     "axios": "^0.21.1",
     "uuid": "^X.X.X",
     "node-fetch": "^2.6.3"

@@ -256,6 +256,9 @@ exports.generarFactura = async (req, res) => {
     }
   } catch (error) {
     console.error('Error general:', error.message);
+    if (error.response) {
+      console.error('Respuesta de error de Openfactura:', error.response.data);
+    }
     res.status(500).send('Error en la ejecución de la función');
   }
 };
