@@ -20,7 +20,7 @@ exports.generarFactura = async (req, res) => {
 
     const itemId = req.body.event.pulseId;
     const apiKeyMonday = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjIzMjg3MzUyNCwiYWFpIjoxMSwidWlkIjoyMzUzNzM2NCwiaWFkIjoiMjAyMy0wMS0zMVQyMTowMjoxNy4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTUwNzUxNiwicmduIjoidXNlMSJ9.lX1RYu90B2JcH0QxITaF8ymd4d6dBes0FJHPI1mzSRE'; // Reemplaza con tu API key de Monday.com
-    const apiKeyHaulmer = '43b21e8886cd4866bfa8b40e6fd0b751'; // Reemplaza con tu API key de Haulmer
+    const apiKeyHaulmer = '928e15a2d14d4a6292345f04960f4bd3'; // Reemplaza con tu API key de Haulmer
     const apiKeyOpenfactura = '41eb78998d444dbaa4922c410ef14057'; // Reemplaza con tu API key de Openfactura
     const bucketName = 'facturas-urbex'; // Nombre de tu bucket de Google Cloud Storage
 
@@ -70,39 +70,16 @@ exports.generarFactura = async (req, res) => {
 
     // Generar una Idempotency Key única
     const idempotencyKey = generateIdempotencyKey();
-    
-    // Obtener información del emisor desde la API de Haulmer
-    const rutEmisor = "76430498-5"; // RUT fijo del emisor
-    console.log("RUT del emisor:", rutEmisor);
-    
-    let emisor;
-    
-    try {
-        const haulmerResponse = await axios.get(`https://api.haulmer.com/v2/dte/taxpayer/${rutEmisor}`, {
-          headers: {
-            apikey: apiKeyHaulmer
-          }
-        });
-      
-        const dataEmisor = haulmerResponse.data;
-        console.log("Datos del receptor recibidos de Haulmer:", dataEmisor);
 
-        const giroEmisTruncado = dataEmisor.actividades.find(act => act.actividadPrincipal)?.giro.substring(0, 40) || '';
-      
-        emisor = {
-          RUTEmisor: rutEmisor,
-          RznSoc: dataEmisor.razonSocial || '',
-          GiroEmis: giroEmisTruncado,
-          Acteco: Number(dataEmisor.actividades.find(act => act.actividadPrincipal)?.codigoActividadEconomica) || 0,
-          DirOrigen: dataEmisor.direccion || '',
-          CmnaOrigen: dataEmisor.comuna || '',
-          CdgSIISucur: dataEmisor.sucursales?.[0]?.cdgSIISucur || ''
-        };
-    
-    } catch (error) {
-      console.error('Error al obtener datos del emisor desde Haulmer:', error);
-      // Manejo adicional del error si es necesario
-    }
+    const emisor = {
+        RUTEmisor: "76430498-5",
+        RznSoc: "HOSTY SPA",
+        GiroEmis: "EMPRESAS DE SERVICIOS INTEGRALES DE INFORMÁTICA",
+        Acteco: 620200,
+        DirOrigen: "ARTURO PRAT 527 3 pis OF 1",
+        CmnaOrigen: "Curicó",
+        CdgSIISucur: "79457965"
+    };
 
 
     // Obtener información del receptor desde la API de Haulmer
@@ -112,7 +89,7 @@ exports.generarFactura = async (req, res) => {
 
     console.log("RUT del receptor:", rutReceptor);
     try {
-      const haulmerResponse = await axios.get(`https://api.haulmer.com/v2/dte/taxpayer/${rutReceptor}`, {
+      const haulmerResponse = await axios.get(`https://dev-api.haulmer.com/v2/dte/taxpayer/${rutReceptor}`, {
         headers: {
           apikey: apiKeyHaulmer
         }
