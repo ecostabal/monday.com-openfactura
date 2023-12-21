@@ -126,8 +126,8 @@ exports.generarFactura = async (req, res) => {
         const actividadAlternativa = dataReceptor.actividades.length > 0 ? dataReceptor.actividades[0] : null;
         const actividadElegida = actividadPrincipal || actividadAlternativa;
 
-        // Truncar el giro a 40 caracteres
-        const giroTruncado = actividadElegida && actividadElegida.giro ? actividadElegida.giro.substring(0, 40) : '';
+        // Truncar el giro a 40 caracteres o usar "OTROS" si no hay giro
+        const giroTruncado = actividadElegida && actividadElegida.giro ? actividadElegida.giro.substring(0, 40) : 'OTROS';
 
         receptor = {
         RUTRecep: dataReceptor.rut || '',
