@@ -107,10 +107,10 @@ exports.generarFactura = async (req, res) => {
 
     // Obtener información del receptor desde la API de Haulmer
     const rutReceptor = rutReceptorColumn.text;
-    console.log(rutReceptor) // Asegúrate de que este valor se extrae correctamente
-    let receptor;
-
     console.log("RUT del receptor:", rutReceptor);
+    let receptor;
+    let razonSocialReceptor; // Declarada aquí para tener un ámbito más amplio
+
     try {
       const haulmerResponse = await axios.get(`https://api.haulmer.com/v2/dte/taxpayer/${rutReceptor}`, {
         headers: {
@@ -120,6 +120,8 @@ exports.generarFactura = async (req, res) => {
     
       const dataReceptor = haulmerResponse.data;
       console.log("Datos del receptor recibidos de Haulmer:", dataReceptor);
+      razonSocialReceptor = dataReceptor.razonSocial || ''; // Asignación de valor
+      console.log("Razón social del receptor:", razonSocialReceptor);
     
         // Obtener la actividad principal o una alternativa
         const actividadPrincipal = dataReceptor.actividades.find(act => act.actividadPrincipal);
@@ -164,14 +166,16 @@ exports.generarFactura = async (req, res) => {
         Detalle: [
           {
             NroLinDet: 1,
-            NmbItem: "Comision de Arriendo " + descripcionColumn.text + " , Nº Unidad: " + unidadColumn.text,
+            NmbItem: "Comisión de Arriendo - OT Nº " + itemId,
+            DscItem: descripcionColumn.text + " , Nº Unidad: " + unidadColumn.text,
             QtyItem: 1,
             PrcItem: parseFloat(comisionArriendo),
             MontoItem: comisionArriendo                   
           },
           {
             NroLinDet: 2,
-            NmbItem: "Gasto Notarial",
+            NmbItem: "Gasto Notarial - OT Nº " + itemId,
+            DscItem: descripcionColumn.text + " , Nº Unidad: " + unidadColumn.text,
             QtyItem: 1,
             PrcItem: parseFloat(gastoNotarial),
             MontoItem: gastoNotarial                
@@ -290,8 +294,28 @@ exports.generarFactura = async (req, res) => {
             }
           );
 
+          const updateResponse3 = await axios.post(
+            'https://api.monday.com/v2',
+            {
+              query: `
+                mutation {
+                  change_simple_column_value (item_id: ${itemId}, board_id: 5598495616, column_id:"texto92", value: "${razonSocialReceptor}" ) {
+                    id
+                  }     
+                }
+              `,
+            },
+            {
+              headers: {
+                'Authorization': apiKeyMonday,
+                'Content-Type': 'application/json'
+              },
+            }
+          );
+
           console.log("Respuesta de la actualización en Monday.com:", updateResponse1.data);
           console.log("Respuesta de la actualización en Monday.com:", updateResponse2.data);
+          console.log("Respuesta de la actualización en Monday.com:", updateResponse3.data);
 
           if (updateResponse1.data && updateResponse2.data) {
             res.status(200).send("Factura creada y datos actualizados en Monday.com");
